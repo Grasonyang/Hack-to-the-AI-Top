@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>D3 Candlestick Chart (Non-Continuous Dates)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* 簡單的 CSS 樣式 */
+        .candle {
+            stroke-width: 1;
+        }
+
+        .up {
+            fill: rgb(117, 255, 117);
+            stroke: green;
+        }
+
+        .down {
+            fill: rgb(255, 134, 134);
+            stroke: red;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>AI LLM Predict Buy Point</h2>
+        Ticker: <input type="text" id="ticker" value="2330.TW"><br>
+        Start Date: <input type="date" id="start_date" value="2024-01-01"><br>
+        End Date: <input type="date" id="end_date" value="2024-12-31"><br>
+        Interval: <select id="interval">
+            <option value="1d">1d</option>
+            <option value="1wk">1wk</option>
+            <option value="1mo">1mo</option>
+        </select><br>
+        <button onclick="getData()">Get Data</button>
+    </div>
+
+    <div style="display: flex; justify-content: space-center; align-items: center;">
+        <button class="movebutton" id="leftButton">&lt;</button>
+        <div id="chart"></div>
+        <button class="movebutton" id="rightButton">&gt;</button>
+    </div>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</body>
+<script>
+    let data = [];
+    const margin = { top: 20, right: 20, bottom: 70, left: 60 }; // 增加 bottom margin
+    const width = 960 - margin.left - margin.right;
+    const height = 500 - margin.top - margin.bottom;
+
+    const svg = d3.select("#chart")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+    // --- 使用 d3.scaleBand() ---
+    const x = d3.scaleBand().range([0, width]).padding(0.2); // 添加 padding
+    const y = d3.scaleLinear().range([height, 0]);
+
+    const xAxis = d3.axisBottom(x);
+    const yAxis = d3.axisLeft(y);
+
+    svg.append("g")
+        .attr("class", "x-axis")
+        .attr("transform", `translate(0, ${height})`)
+        .call(xAxis);
+
+    svg.append("g")
+        .attr("class", "y-axis")
+        .call(yAxis);
+
+
+    let startIndex = 0;
+    const dataSlice = 30;
+
+    d3.select("#leftButton").on("click", () => {
+        if (data.length > 0 && startIndex > 0) {
+            startIndex -= 1;
+            updateChart();
+        }
+    });
+
+    d3.select("#rightButton").on("click", () => {
+        if (data.length > 0 && startIndex + dataSlice < data.length) {
+            startIndex += 1;
+            updateChart();
+        }
+    });
+
+    function processData(apiData) {
+        if (!apiData || apiData.length === 0) {
+            console.warn("No data received from API.");
+            return;
+        }
+        // 從第31筆開始抓取，設定移動窗口35，每次移動一筆
+        callLLM1Data = [];
+        datawindowsize = 35;
+        for (let i = 27; i < apiData.length - datawindowsize; i++) {
+            child_datas = []
+            for (let j = 0; j < datawindowsize; j++) {
+                child_datas.push(apiData[i + j])
+            }
+            callLLM1Data.push(child_datas)
+        }
+        console.log(callLLM1Data)
+
+        data = apiData.map(item => ({
+            date: item.date, // 不再需要 new Date()
+            open: +item.open,
+            high: +item.high,
+            low: +item.low,
+            close: +item.close
+        }));
+
+        updateChart();
+    }
+    function updateChart() {
+        if (data.length === 0) return;
+
+        const newData = data.slice(startIndex, startIndex + dataSlice);
+        // x 軸的 domain 是日期字串的陣列
+        x.domain(newData.map(d => d.date));
+        y.domain([
+            d3.min(newData, d => d.low),
+            d3.max(newData, d => d.high)
+        ]);
+
+        // 更新 x 軸
+        svg.select(".x-axis")
+            .transition()
+            .duration(500)
+            .call(xAxis)
+            .selectAll("text") // 旋轉 x 軸的 labels
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", "rotate(-65)");
+
+
+        svg.select(".y-axis")
+            .transition()
+            .duration(500)
+            .call(yAxis);
+
+        // --- 繪製 K 線圖 ---
+        const candles = svg.selectAll(".candle")
+            .data(newData, d => d.date);
+
+        const candlesEnter = candles.enter()
+            .append("g")
+            .attr("class", "candle");
+
+        // K 線的垂直線
+        candlesEnter.append("line")
+            .attr("class", "stem")
+            .attr("x1", d => x(d.date) + x.bandwidth() / 2) // 使用 band 的中心
+            .attr("x2", d => x(d.date) + x.bandwidth() / 2)
+            .attr("y1", d => y(d.high))
+            .attr("y2", d => y(d.low))
+            .attr("stroke", "black");
+
+        // K 線的矩形
+        candlesEnter.append("rect")
+            .attr("class", d => d.open > d.close ? "down" : "up")
+            .attr("x", d => x(d.date)) // x 座標是 band 的起始位置
+            .attr("y", d => y(Math.max(d.open, d.close)))
+            .attr("width", x.bandwidth()) // 寬度是 band 的寬度
+            .attr("height", d => Math.abs(y(d.open) - y(d.close)) || 1); // 避免高度為 0
+
+        const candlesUpdate = candlesEnter.merge(candles);
+
+        candlesUpdate.select(".stem")
+            .transition()
+            .duration(500)
+            .attr("x1", d => x(d.date) + x.bandwidth() / 2)
+            .attr("x2", d => x(d.date) + x.bandwidth() / 2)
+            .attr("y1", d => y(d.high))
+            .attr("y2", d => y(d.low));
+
+        candlesUpdate.select("rect")
+            .transition()
+            .duration(500)
+            .attr("class", d => d.open > d.close ? "down" : "up")
+            .attr("x", d => x(d.date))
+            .attr("y", d => y(Math.max(d.open, d.close)))
+            .attr("width", x.bandwidth())
+            .attr("height", d => Math.abs(y(d.open) - y(d.close)) || 1);
+
+        candles.exit().remove();
+    }
+    function getData() {
+        let ticker = $("#ticker").val();
+        let start_date = $("#start_date").val();
+        let end_date = $("#end_date").val();
+        let interval = $("#interval").val();
+
+        if (ticker && start_date && end_date && interval) {
+            let apiUrl = `/api/yfinance/${ticker}/${start_date}/${end_date}/${interval}`;
+
+            $.ajax({
+                url: apiUrl,
+                method: "GET",
+                dataType: "json",
+                success: function (apiData) {
+                    console.log(apiData.data)
+                    processData(apiData.data);
+                },
+                error: function (error) {
+                    console.error("Error:", error);
+                },
+            });
+        }
+    }
+
+</script>
+
+</html>
