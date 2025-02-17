@@ -31,7 +31,7 @@ def getData(ticker, start_date, end_date, interval) -> jsonify:
         stock_data = stock_data.fillna(0)
         # print(stock_data)
         # save stock data to csv
-        stock_data.to_csv(f'{ticker}_{start_date}_{end_date}.csv')
+        # stock_data.to_csv(f'{ticker}_{start_date}_{end_date}.csv')
         # reset index to ensure keys are serializable
         stock_data_df_to_json = []
         i = 0
