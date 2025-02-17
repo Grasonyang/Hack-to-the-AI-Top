@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 import yfinance as yf
 import pandas as pd
 import functions.indicator as indicators
+import functions.gemini as gemini
 api = Blueprint('api', __name__)
 
 
@@ -66,5 +67,30 @@ def getData(ticker, start_date, end_date, interval) -> jsonify:
         })
 
 
-def callAPI():
-    pass
+@api.route('/api/gemini/<model>', methods=['POST'])
+def callAPI(model):
+    data = request.get_json()
+    print
+    if not data or 'input' not in data:
+        print("No input data provided")
+        return jsonify({
+            "success": False,
+            "message": "No input data provided"
+        })
+
+    input_data = data['input']
+    output = None
+    if model == '1':
+        print("call model 1")
+        output = gemini.send_message1(input_data)
+        print(output)
+    elif model == '2':
+        print("call model 2")
+        output = gemini.send_message2(input_data)
+        print(output)
+
+    return jsonify({
+        "success": True,
+        "message": "Success call model {}".format(model),
+        "data": output
+    })

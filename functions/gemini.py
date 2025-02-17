@@ -7,9 +7,9 @@ genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
 # create the model 1
 """
-    你是一個專業的股票分析 AI，根據過去 30 天的股票數據，分析是否出現買入訊號。數據包含：
+    你是一個專業的股票分析師，根據過去 30 天的股票數據，分析是否出現買入訊號。數據包含：
     0. Prompt輸入要求
-    - "你是一個專業的股票分析 AI，根據過去 30 天的股票數據，分析是否出現買入訊號。並根據給予的數據進行條件分析、判斷"
+    - "你是一個專業的股票分析師，根據過去 30 天的股票數據，分析是否出現買入訊號。並根據給予的數據進行條件分析、判斷"
     - "你預測的不正確 {{reason}}，請重新預測。"
     1. 開盤價 (open)
     2. 收盤價 (close)
@@ -115,20 +115,17 @@ generation_config1 = {
 model1 = genai.GenerativeModel(
     model_name="gemini-2.0-flash",
     generation_config=generation_config1,
-    system_instruction="你是一個專業的股票分析 AI，根據過去 30 天的股票數據，分析是否出現買入訊號。數據包含：\n0. Prompt輸入要求\n   - \"你是一個專業的股票分析 AI，根據過去 30 天的股票數據，分析是否出現買入訊號。並根據給予的數據進行條件分析、判斷\"\n   - \"你預測的不正確 {{reason}}，請重新預測。\"\n1. 開盤價 (open)\n2. 收盤價 (close)\n3. 最高價 (high)\n4. 最低價 (low)\n5. 成交量 (volume)\n6. MACD 指標：\n   - `macd` (快線 - 慢線)\n   - `macd_signal` (MACD 信號線)\n   - `macd_hist` (MACD 柱狀圖)\n7. KDJ 指標：\n   - `K`\n   - `D`\n   - `J`\n\n請根據以下條件進行判斷：\n1. **MACD 黃金交叉**：`macd` 上穿 `macd_signal`\n2. **KDJ 黃金交叉**：`K` 線上穿 `D` 線\n3. **成交量是否放大**：最近 3 天的成交量均值是否高於過去 30 天的成交量均值\n4. **是否為合適的買點**：\n   - 當 `MACD` 黃金交叉、`KDJ` 黃金交叉且成交量放大時，則判定為合適的買點\n   - 如果任一條件不滿足，則判定為不適合買入\n\n5. **適合的入場價格**：\n   - 如果 `buy_signal = true`，則 `entry_price` 建議為當日收盤價 (`close`)\n   - 如果 `buy_signal = false`，則 `entry_price` 仍提供當日收盤價，但需附上不建議買入的原因\n\n請輸出 JSON 格式結果，包含以下欄位：\n- `\"macd_cross\"`: 是否發生 MACD 黃金交叉 (true/false)\n- `\"kdj_cross\"`: 是否發生 KDJ 黃金交叉 (true/false)\n- `\"volume_increase\"`: 是否成交量放大 (true/false)\n- `\"buy_signal\"`: 是否為合適的買點 (true/false)\n- `\"entry_price\"`: 建議的買入價格 (當日收盤價或計算出的進場價)\n- `\"reason\"`: 文字說明為何適合/不適合買入，包含 MACD、KDJ、成交量的判斷邏輯\n\n---\n\n### **JSON 輸出範例**\n#### **適合買入的情況**\n```json\n{\n  \"macd_cross\": true,\n  \"kdj_cross\": true,\n  \"volume_increase\": true,\n  \"buy_signal\": true,\n  \"entry_price\": 120.5,\n  \"reason\": \"MACD 出現黃金交叉 (macd 上穿 macd_signal)，KDJ 亦出現黃金交叉 (K 上穿 D)，且成交量較過去 30 天均量提升，確認市場有資金流入，建議買入，入場價格為當日收盤價 120.5。\"\n}\n\n### **JSON 輸出範例**\n#### **適合買入的情況**\n```json\n{\n  \"macd_cross\": true,\n  \"kdj_cross\": false,\n  \"volume_increase\": true,\n  \"buy_signal\": false,\n  \"entry_price\": 118.3,\n  \"reason\": \"雖然 MACD 出現黃金交叉 (macd 上穿 macd_signal)，且成交量放大，但 KDJ 尚未形成黃金交叉 (K 未上穿 D)，顯示短線動能不足，仍有可能回調，因此不建議買入，當日收盤價為 118.3。\"\n} or {\n  \"macd_cross\": true,\n  \"kdj_cross\": true,\n  \"volume_increase\": false,\n  \"buy_signal\": false,\n  \"entry_price\": 125.7,\n  \"reason\": \"MACD 及 KDJ 均已形成黃金交叉，技術面偏多，但成交量未見明顯增加，顯示市場缺乏資金支持，可能是假突破，當日收盤價為 125.7，暫不建議進場。\"\n}\n\n",
+    system_instruction="你是一個專業的股票分析師，根據過去 30 天的股票數據，分析是否出現買入訊號。數據包含：\n0. Prompt輸入要求\n   - \"你是一個專業的股票分析師，根據過去 30 天的股票數據，分析是否出現買入訊號。並根據給予的數據進行條件分析、判斷\"\n   - \"你預測的不正確 {{reason}}，請重新預測。\"\n1. 開盤價 (open)\n2. 收盤價 (close)\n3. 最高價 (high)\n4. 最低價 (low)\n5. 成交量 (volume)\n6. MACD 指標：\n   - `macd` (快線 - 慢線)\n   - `macd_signal` (MACD 信號線)\n   - `macd_hist` (MACD 柱狀圖)\n7. KDJ 指標：\n   - `K`\n   - `D`\n   - `J`\n\n請根據以下條件進行判斷：\n1. **MACD 黃金交叉**：`macd` 上穿 `macd_signal`\n2. **KDJ 黃金交叉**：`K` 線上穿 `D` 線\n3. **成交量是否放大**：最近 3 天的成交量均值是否高於過去 30 天的成交量均值\n4. **是否為合適的買點**：\n   - 當 `MACD` 黃金交叉、`KDJ` 黃金交叉且成交量放大時，則判定為合適的買點\n   - 如果任一條件不滿足，則判定為不適合買入\n\n5. **適合的入場價格**：\n   - 如果 `buy_signal = true`，則 `entry_price` 建議為當日收盤價 (`close`)\n   - 如果 `buy_signal = false`，則 `entry_price` 仍提供當日收盤價，但需附上不建議買入的原因\n\n請輸出 JSON 格式結果，包含以下欄位：\n- `\"macd_cross\"`: 是否發生 MACD 黃金交叉 (true/false)\n- `\"kdj_cross\"`: 是否發生 KDJ 黃金交叉 (true/false)\n- `\"volume_increase\"`: 是否成交量放大 (true/false)\n- `\"buy_signal\"`: 是否為合適的買點 (true/false)\n- `\"entry_price\"`: 建議的買入價格 (當日收盤價或計算出的進場價)\n- `\"reason\"`: 文字說明為何適合/不適合買入，包含 MACD、KDJ、成交量的判斷邏輯\n\n---\n\n### **JSON 輸出範例**\n#### **適合買入的情況**\n```json\n{\n  \"macd_cross\": true,\n  \"kdj_cross\": true,\n  \"volume_increase\": true,\n  \"buy_signal\": true,\n  \"entry_price\": 120.5,\n  \"reason\": \"MACD 出現黃金交叉 (macd 上穿 macd_signal)，KDJ 亦出現黃金交叉 (K 上穿 D)，且成交量較過去 30 天均量提升，確認市場有資金流入，建議買入，入場價格為當日收盤價 120.5。\"\n}\n\n### **JSON 輸出範例**\n#### **適合買入的情況**\n```json\n{\n  \"macd_cross\": true,\n  \"kdj_cross\": false,\n  \"volume_increase\": true,\n  \"buy_signal\": false,\n  \"entry_price\": 118.3,\n  \"reason\": \"雖然 MACD 出現黃金交叉 (macd 上穿 macd_signal)，且成交量放大，但 KDJ 尚未形成黃金交叉 (K 未上穿 D)，顯示短線動能不足，仍有可能回調，因此不建議買入，當日收盤價為 118.3。\"\n} or {\n  \"macd_cross\": true,\n  \"kdj_cross\": true,\n  \"volume_increase\": false,\n  \"buy_signal\": false,\n  \"entry_price\": 125.7,\n  \"reason\": \"MACD 及 KDJ 均已形成黃金交叉，技術面偏多，但成交量未見明顯增加，顯示市場缺乏資金支持，可能是假突破，當日收盤價為 125.7，暫不建議進場。\"\n}\n\n",
 )
-
-chat_session1 = model1.start_chat(
-    history=[
-    ]
-)
+history1 = []
+chat_session1 = model1.start_chat(history=history1)
 # create the model 2
 """
-    你是一個專業的股票交易評估 AI，你的任務是根據 **額外 5 天的數據**，驗證 **過去 30 天的分析結果是否準確**。  
-    你需要評估上一個模型 (`Prompt 1`) 依照30天預測的輸出是否與實際市場走勢相符，並給出 1~10 分的評價。  
+    你是一個專業的股票交易評估師，你的任務是根據 **額外 5 天的數據**，驗證 **過去 30 天的分析結果是否準確**。
+    你需要評估上一個模型 (`Prompt 1`) 依照30天預測的輸出是否與實際市場走勢相符，並給出 1~10 分的評價。
 
-    **輸入數據包含：**  
-    1. **過去 35 天的股票數據**（包含開盤價、收盤價、最高價、最低價、成交量、MACD、KDJ 等）  
+    **輸入數據包含：**
+    1. **過去 35 天的股票數據**（包含開盤價、收盤價、最高價、最低價、成交量、MACD、KDJ 等）
     2. **上一個預測的 JSON 輸出 (`Prompt 1`)**，包含：
     - `macd_cross`
     - `kdj_cross`
@@ -249,115 +246,41 @@ generation_config2 = {
 model2 = genai.GenerativeModel(
     model_name="gemini-2.0-flash",
     generation_config=generation_config2,
-    system_instruction="你是一個專業的股票交易評估 AI，你的任務是根據 **額外 5 天的數據**，驗證 **過去 30 天的分析結果是否準確**。  \n你需要評估上一個模型 (`Prompt 1`) 依照30天預測的輸出是否與實際市場走勢相符，並給出 1~10 分的評價。  \n\n**輸入數據包含：**  \n1. **過去 35 天的股票數據**（包含開盤價、收盤價、最高價、最低價、成交量、MACD、KDJ 等）  \n2. **上一個預測的 JSON 輸出 (`Prompt 1`)**，包含：\n   - `macd_cross`\n   - `kdj_cross`\n   - `volume_increase`\n   - `buy_signal`\n   - `entry_price`\n   - `reason`\n3. **驗證標準**：\n   - 若 `buy_signal = true`，則評估未來 5 天的最高價是否高於 `entry_price` 至少 **3%**，若達標則視為成功。\n   - 若 `buy_signal = false`，則評估未來 5 天的最低價是否 **未曾低於 entry_price 3%**，若達標則視為成功。\n   - 若 MACD/KDJ 指標走勢驗證了前一個判斷，則加分。\n   - 若成交量在預測後確實放大，則加分。\n\n### **JSON 輸出格式**\n請輸出 JSON，包含以下欄位：\n- `\"previous_prediction\"`: **上一個預測的 JSON**（原封不動回傳）\n- `\"score\"`: 1~10 分的評估結果\n- `\"pass\"`: `true/false`，若 `score > 8` 則為 `true`\n- `\"validation_reason\"`: 解釋評分的原因\n- `\"adjusted_entry_price\"`: 若 `pass = false`，則提供修正後的進場價格，否則與原始 `entry_price` 相同\n- `\"recommend_reanalysis\"`: 若 `pass = false` 則為 `true`，表示應重新評估交易機會\n\n---\n\n### **JSON 輸出範例**\n#### **預測成功（通過驗證）**\n```json\n{\n  \"previous_prediction\": {\n    \"macd_cross\": true,\n    \"kdj_cross\": true,\n    \"volume_increase\": true,\n    \"buy_signal\": true,\n    \"entry_price\": 120.5,\n    \"reason\": \"MACD、KDJ 黃金交叉，且成交量放大，市場資金流入，適合買入。\"\n  },\n  \"score\": 9,\n  \"pass\": true,\n  \"validation_reason\": \"預測後 5 天內，股價最高達到 125.0，漲幅超過 3%，符合預測，判定通過。\",\n  \"adjusted_entry_price\": 120.5,\n  \"recommend_reanalysis\": false\n}\n#### **預測失敗（需要重新分析）**\n```json\n{\n  \"previous_prediction\": {\n    \"macd_cross\": true,\n    \"kdj_cross\": true,\n    \"volume_increase\": true,\n    \"buy_signal\": true,\n    \"entry_price\": 120.5,\n    \"reason\": \"MACD、KDJ 黃金交叉，且成交量放大，市場資金流入，適合買入。\"\n  },\n  \"score\": 6,\n  \"pass\": false,\n  \"validation_reason\": \"買入後 5 天內，股價最高僅達到 122.0，未超過 3% 漲幅，且成交量未進一步放大，應考慮當日是賣多、賣少、買多、買少這種基本的依據判斷。\",\n  \"adjusted_entry_price\": 118.0,\n  \"recommend_reanalysis\": true\n}",
+    system_instruction="你是一個專業的股票交易評估師，你的任務是根據 **額外 5 天的數據**，驗證 **過去 30 天的分析結果是否準確**。  \n你需要評估上一個模型 (`Prompt 1`) 依照30天預測的輸出是否與實際市場走勢相符，並給出 1~10 分的評價。  \n\n**輸入數據包含：**  \n1. **過去 35 天的股票數據**（包含開盤價、收盤價、最高價、最低價、成交量、MACD、KDJ 等）  \n2. **上一個預測的 JSON 輸出 (`Prompt 1`)**，包含：\n   - `macd_cross`\n   - `kdj_cross`\n   - `volume_increase`\n   - `buy_signal`\n   - `entry_price`\n   - `reason`\n3. **驗證標準**：\n   - 若 `buy_signal = true`，則評估未來 5 天的最高價是否高於 `entry_price` 至少 **3%**，若達標則視為成功。\n   - 若 `buy_signal = false`，則評估未來 5 天的最低價是否 **未曾低於 entry_price 3%**，若達標則視為成功。\n   - 若 MACD/KDJ 指標走勢驗證了前一個判斷，則加分。\n   - 若成交量在預測後確實放大，則加分。\n\n### **JSON 輸出格式**\n請輸出 JSON，包含以下欄位：\n- `\"previous_prediction\"`: **上一個預測的 JSON**（原封不動回傳）\n- `\"score\"`: 1~10 分的評估結果\n- `\"pass\"`: `true/false`，若 `score > 8` 則為 `true`\n- `\"validation_reason\"`: 解釋評分的原因\n- `\"adjusted_entry_price\"`: 若 `pass = false`，則提供修正後的進場價格，否則與原始 `entry_price` 相同\n- `\"recommend_reanalysis\"`: 若 `pass = false` 則為 `true`，表示應重新評估交易機會\n\n---\n\n### **JSON 輸出範例**\n#### **預測成功（通過驗證）**\n```json\n{\n  \"previous_prediction\": {\n    \"macd_cross\": true,\n    \"kdj_cross\": true,\n    \"volume_increase\": true,\n    \"buy_signal\": true,\n    \"entry_price\": 120.5,\n    \"reason\": \"MACD、KDJ 黃金交叉，且成交量放大，市場資金流入，適合買入。\"\n  },\n  \"score\": 9,\n  \"pass\": true,\n  \"validation_reason\": \"預測後 5 天內，股價最高達到 125.0，漲幅超過 3%，符合預測，判定通過。\",\n  \"adjusted_entry_price\": 120.5,\n  \"recommend_reanalysis\": false\n}\n#### **預測失敗（需要重新分析）**\n```json\n{\n  \"previous_prediction\": {\n    \"macd_cross\": true,\n    \"kdj_cross\": true,\n    \"volume_increase\": true,\n    \"buy_signal\": true,\n    \"entry_price\": 120.5,\n    \"reason\": \"MACD、KDJ 黃金交叉，且成交量放大，市場資金流入，適合買入。\"\n  },\n  \"score\": 6,\n  \"pass\": false,\n  \"validation_reason\": \"買入後 5 天內，股價最高僅達到 122.0，未超過 3% 漲幅，且成交量未進一步放大，應考慮當日是賣多、賣少、買多、買少這種基本的依據判斷。\",\n  \"adjusted_entry_price\": 118.0,\n  \"recommend_reanalysis\": true\n}",
 )
-
-chat_session2 = model2.start_chat(
-    history=[
-    ]
-)
+history2 = []
+chat_session2 = model2.start_chat(history=history2)
 
 
 def send_message1(input):
-    global chat_session1
+    global chat_session1, history1
     output = chat_session1.send_message(input)
-    if check_output(output):
-        return {
-            "success": False,
-            "message": "model1 output is invalid"
-        }
-    else:
-        return deal_output(output)
+    output = output.text
+    if len(history1) > 12:
+        history1.pop(0, 1)
+    history1.append({
+        "role": "user",
+        "parts": [input]
+    })
+    history1.append({
+        "role": "model",
+        "parts": [output]
+    })
+    return output
 
 
 def send_message2(input):
-    global chat_session2
+    global chat_session2, history2
     output = chat_session2.send_message(input)
-    if check_output(output):
-        return {
-            "success": False,
-            "message": "model2 output is invalid"
-        }
-    else:
-        return deal_output(output)
-
-
-def check_output(output):
-    """
-    檢查 Gemini API 回傳的輸出是否有效。
-
-    Args:
-        output: Gemini API 回傳的 GenerateContentResponse 物件。
-
-    Returns:
-        True: 如果輸出有效。
-        False: 如果輸出無效，需要重新發送請求。
-    """
-
-    try:
-        # 1. 檢查 candidates 是否存在且不為空
-        if not output.candidates:
-            print("Error: No candidates found in the output.")
-            return False
-
-        # 2. 遍歷 candidates 檢查 finish_reason
-        for candidate in output.candidates:
-            if not candidate.content.parts:  # 檢查 parts 是否存在
-                print("Error: No parts found in the candidate's content.")
-                return False
-
-            for part in candidate.content.parts:  # 遍歷 parts
-                try:
-                    text = part.text
-                    # 嘗試解析 text 是否為 JSON (如果你的模型輸出是 JSON)
-                    json.loads(text)  # 如果不是 JSON 會拋出異常
-                except json.JSONDecodeError:
-                    # 只顯示前50個字元，避免過長
-                    print(
-                        f"Warning: Candidate text is not valid JSON: {text[:50]}...")
-                    # 如果你的模型預期輸出 JSON，但實際上不是，這可能是一個錯誤
-                    # 你可以選擇直接返回 False，或者根據情況決定是否重試
-                    # return False  # 如果你希望模型輸出嚴格的 JSON 格式
-                    pass  # 如果你允許模型輸出非 JSON 格式
-
-                finish_reason = candidate.finish_reason
-                if finish_reason != "STOP":
-                    print(
-                        f"Warning: Candidate finish_reason is not STOP: {finish_reason}")
-                    # 根據 finish_reason 判斷是否需要重試
-                    # 一些非 STOP 的 finish_reason 可能需要重試，例如 LENGTH
-                    # 但有些則不需要，例如 CONTENT_FILTER
-                    if finish_reason == "LENGTH":  # 舉例
-                        return False  # 如果是長度限制，可以考慮重試
-
-        # 3. (可選) 檢查 avg_logprobs (設定閾值)
-        # for candidate in output.candidates:
-        #     avg_logprobs = candidate.avg_logprobs
-        #     if avg_logprobs is not None and avg_logprobs < -2.0:  # 示例閾值
-        #         print(f"Warning: Low avg_logprobs: {avg_logprobs}")
-        #         return False
-
-        return True  # 所有檢查都通過，表示輸出有效
-
-    except AttributeError as e:  # 捕捉缺失屬性的錯誤
-        print(f"Error: Incomplete output structure: {e}")
-        return False
-    except Exception as e:  # 捕捉其他未知錯誤
-        print(f"An unexpected error occurred during output check: {e}")
-        return False
-
-
-def deal_output(output):
-    # 檢查是否有 candidates
-    if output.candidates:
-        # 遍歷每個 candidate
-        for candidate in output.candidates:
-            # 檢查 content 是否存在
-            if candidate.content:
-                # 檢查 parts 是否存在
-                if candidate.content.parts:
-                    # 遍歷每個 part
-                    for part in candidate.content.parts:
-                        # 提取 text
-                        text = part.text
-                        return text
+    output = output.text
+    if len(history2) > 12:
+        history2.pop(0, 1)
+    history2.append({
+        "role": "user",
+        "parts": [input]
+    })
+    history2.append({
+        "role": "model",
+        "parts": [output]
+    })
+    return output

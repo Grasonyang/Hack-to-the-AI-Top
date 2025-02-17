@@ -152,10 +152,43 @@ async function dealData(data) {
       }
     }
     input_data.input_raw.push(data[i + data_window]);
-    input_data.input1.push(input1);
-    input_data.input2.push(input2);
+    input_data.input1.push({
+      prompt:
+        "你是一個專業的股票分析師，根據過去 30 天的股票數據，分析是否出現買入訊號。",
+      data: input1,
+    });
+    const jsonData = JSON.stringify({
+      prompt:
+        "你是一個專業的股票分析師，根據過去 30 天的股票數據，分析是否出現買入訊號。",
+      data: input1,
+    });
+    await callAPI(input1, 1);
+    break;
+    input_data.input2.push({
+      prompt: "",
+      data: input2,
+      last_prompt_ouput: {},
+    });
   }
   console.log(input_data);
+}
+
+async function callAPI(data, model) {
+  let apiUrl = `/api/gemini/${model}`;
+  $.ajax({
+    url: apiUrl,
+    method: "POST",
+    contentType: "application/json",
+    data: JSON.stringify({
+      input: JSON.stringify(data),
+    }),
+    success: function (apiData) {
+      console.log(apiData);
+    },
+    error: function (error) {
+      console.error("Error:", error);
+    },
+  });
 }
 
 function getData() {
@@ -173,7 +206,7 @@ function getData() {
       dataType: "json",
       success: async function (apiData) {
         data = await dealData(apiData.data); // call llm
-        // drawData(data); // draw
+        // drawData(apiData.data); // draw
       },
       error: function (error) {
         console.error("Error:", error);
