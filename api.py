@@ -6,7 +6,9 @@ import functions.gemini as gemini
 
 api = Blueprint('api', __name__)
 
-tokens = [""]
+tokens = ["AIzaSyAU4jJ5szZ_XrY5xRYhMAD7SCe1quEuh0s",
+          "AIzaSyCgy28m7cUdUjoVDEmO6YHgSzD526Pev_g",
+          "AIzaSyBodMeeVZxh_J6gtkGtXID5Rg_e1MnbJ6Q"]
 token = {
     "token_index": 1,
     "text": tokens[0],
