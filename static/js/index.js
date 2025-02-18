@@ -1,9 +1,9 @@
 let data = [];
-const margin = { top: 20, right: 20, bottom: 70, left: 60 }; // 增加 bottom margin
-const width = 960 - margin.left - margin.right;
-const height = 500 - margin.top - margin.bottom;
+let margin = { top: 20, right: 20, bottom: 70, left: 60 }; // 增加 bottom margin
+let width = 960 - margin.left - margin.right;
+let height = 500 - margin.top - margin.bottom;
 
-const svg = d3
+let svg = d3
   .select("#chart")
   .append("svg")
   .attr("width", width + margin.left + margin.right)
@@ -12,11 +12,11 @@ const svg = d3
   .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
 // --- 使用 d3.scaleBand() ---
-const x = d3.scaleBand().range([0, width]).padding(0.2); // 添加 padding
-const y = d3.scaleLinear().range([height, 0]);
+let x = d3.scaleBand().range([0, width]).padding(0.2); // 添加 padding
+let y = d3.scaleLinear().range([height, 0]);
 
-const xAxis = d3.axisBottom(x);
-const yAxis = d3.axisLeft(y);
+let xAxis = d3.axisBottom(x);
+let yAxis = d3.axisLeft(y);
 
 svg
   .append("g")
@@ -27,7 +27,7 @@ svg
 svg.append("g").attr("class", "y-axis").call(yAxis);
 
 let startIndex = 0;
-const dataSlice = 30;
+let dataSlice = 30;
 
 d3.select("#leftButton").on("click", () => {
   if (data.length > 0 && startIndex > 0) {
@@ -46,7 +46,7 @@ d3.select("#rightButton").on("click", () => {
 function updateChart() {
   if (data.length === 0) return;
 
-  const newData = data.slice(startIndex, startIndex + dataSlice);
+  let newData = data.slice(startIndex, startIndex + dataSlice);
   // x 軸的 domain 是日期字串的陣列
   x.domain(newData.map((d) => d.date));
   y.domain([d3.min(newData, (d) => d.low), d3.max(newData, (d) => d.high)]);
@@ -66,9 +66,9 @@ function updateChart() {
   svg.select(".y-axis").transition().duration(500).call(yAxis);
 
   // --- 繪製 K 線圖 ---
-  const candles = svg.selectAll(".candle").data(newData, (d) => d.date);
+  let candles = svg.selectAll(".candle").data(newData, (d) => d.date);
 
-  const candlesEnter = candles.enter().append("g").attr("class", "candle");
+  let candlesEnter = candles.enter().append("g").attr("class", "candle");
 
   // K 線的垂直線
   candlesEnter
@@ -89,7 +89,7 @@ function updateChart() {
     .attr("width", x.bandwidth()) // 寬度是 band 的寬度
     .attr("height", (d) => Math.abs(y(d.open) - y(d.close)) || 1); // 避免高度為 0
 
-  const candlesUpdate = candlesEnter.merge(candles);
+  let candlesUpdate = candlesEnter.merge(candles);
 
   candlesUpdate
     .select(".stem")
@@ -131,14 +131,15 @@ function drawData(apiData) {
 }
 
 async function dealData(data) {
-  const dataWindow = 35;
+  console.log(data);
+  let dataWindow = 35;
   // output1_count 只有 module1 預測
-  const output1CountNoModel2 = {
+  let output1CountNoModel2 = {
     buySignalFalse: 0,
     buySignalTrue: 0,
     firstReturnOutput: [],
   };
-  const output1CountHasModel2 = {
+  let output1CountHasModel2 = {
     buySignalFalse: 0,
     buySignalTrue: 0,
     returnOutput: [],
@@ -159,12 +160,12 @@ async function dealData(data) {
 
     // 獲取 input1、input2 json array
     // 組合輸入資料
-    const input1Prompt = {
+    let input1Prompt = {
       prompt:
         "你是一個專業的股票分析師，根據過去 30 天的股票數據，分析是否出現買入訊號。",
       data: input1,
     };
-    console.log(input1PromptS);
+    console.log(input1Prompt);
     let output1 = await callAPI(input1Prompt, 1);
 
     if (output1.buy_signal) {
@@ -173,20 +174,20 @@ async function dealData(data) {
       output1CountNoModel2.buySignalFalse += 1;
     }
 
-    const drawNoModule2Object = JSON.parse(JSON.stringify(input2[30]));
+    let drawNoModule2Object = JSON.parse(JSON.stringify(input2[30]));
     drawNoModule2Object.predict = output1;
     output1CountNoModel2.firstReturnOutput.push(drawNoModule2Object);
 
     // output2 檢視預測結果
     while (true) {
-      const input2Prompt = {
+      let input2Prompt = {
         prompt:
           "你是一個專業的股票交易評估師，你的任務是根據 **額外 5 天的數據**，驗證 **過去 30 天的分析結果是否準確**。",
         data: input2,
         previous_prediction: output1,
       };
 
-      const output2 = await callAPI(input2Prompt, 2);
+      let output2 = await callAPI(input2Prompt, 2);
 
       if (output2.pass) {
         if (output1.buy_signal) {
@@ -195,12 +196,12 @@ async function dealData(data) {
           output1CountHasModel2.buySignalFalse += 1;
         }
 
-        const drawHasModule2Object = JSON.parse(JSON.stringify(input2[30]));
+        let drawHasModule2Object = JSON.parse(JSON.stringify(input2[30]));
         drawHasModule2Object.predict = output1;
         output1CountHasModel2.returnOutput.push(drawHasModule2Object);
         break;
       } else {
-        const retryInput1Prompt = {
+        let retryInput1Prompt = {
           prompt: `你預測的不正確 ${output2.validation_reason}，請重新預測。`,
           data: input1,
         };
@@ -208,6 +209,27 @@ async function dealData(data) {
       }
     }
   }
+  // Download output1CountNoModel2
+  let output1CountNoModel2Blob = new Blob(
+    [JSON.stringify(output1CountNoModel2)],
+    { type: "application/json" }
+  );
+  let output1CountNoModel2Url = URL.createObjectURL(output1CountNoModel2Blob);
+  let output1CountNoModel2Link = document.createElement("a");
+  output1CountNoModel2Link.href = output1CountNoModel2Url;
+  output1CountNoModel2Link.download = "output1CountNoModel2.json";
+  output1CountNoModel2Link.click();
+
+  // Download output1CountHasModel2
+  let output1CountHasModel2Blob = new Blob(
+    [JSON.stringify(output1CountHasModel2)],
+    { type: "application/json" }
+  );
+  let output1CountHasModel2Url = URL.createObjectURL(output1CountHasModel2Blob);
+  let output1CountHasModel2Link = document.createElement("a");
+  output1CountHasModel2Link.href = output1CountHasModel2Url;
+  output1CountHasModel2Link.download = "output1CountHasModel2.json";
+  output1CountHasModel2Link.click();
 }
 
 async function callAPI(data, model) {
@@ -221,7 +243,9 @@ async function callAPI(data, model) {
         input: JSON.stringify(data),
       }),
       success: function (e) {
-        resolve(e.data);
+        let data = JSON.parse(e.data);
+        console.log(data);
+        resolve(data);
       },
       error: function (error) {
         console.error("Error:", error);
@@ -245,6 +269,7 @@ function getData() {
       method: "GET",
       dataType: "json",
       success: async function (apiData) {
+        console.log(apiData);
         data = await dealData(apiData.data); // call llm
         // drawData(apiData.data); // draw
       },

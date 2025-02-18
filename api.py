@@ -1,21 +1,54 @@
 from flask import Blueprint, request, jsonify
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 import yfinance as yf
 import pandas as pd
 import functions.indicator as indicators
 import functions.gemini as gemini
+
 api = Blueprint('api', __name__)
-limiter = Limiter(
-    get_remote_address,
-    app=api,
-    default_limits=["1500 per day", "15 per minute"]
-)
-tokens = ["AIzaSyBodMeeVZxh_J6gtkGtXID5Rg_e1MnbJ6Q", "token2", "token3"]
+
+tokens = [""]
+token = {
+    "token_index": 1,
+    "text": tokens[0],
+    "times": 0,
+}
+
+
+@api.route('/api/gemini/<model>', methods=['POST'])
+def callAPI(model):
+    """
+    setting rate
+    15RPM
+    1500PerDay
+    """
+    global token
+    data = request.get_json()
+    if not data or 'input' not in data:
+        print("No input data provided")
+        return jsonify({
+            "success": False,
+            "message": "No input data provided"
+        })
+
+    input_data = data['input']
+    output = None
+    if model == '1':
+        print("call model 1")
+        output = gemini.send_message1(input_data, token["text"])
+        print(output)
+    elif model == '2':
+        print("call model 2")
+        output = gemini.send_message2(input_data, token["text"])
+        print(output)
+
+    return jsonify({
+        "success": True,
+        "message": "Success call model {}".format(model),
+        "data": output
+    })
 
 
 @api.route('/api/yfinance/<ticker>/<start_date>/<end_date>/<interval>', methods=['GET'])
-@limiter.limit("15 per minute;1500 per day")
 def getData(ticker, start_date, end_date, interval) -> jsonify:
     """
     1. 股票資訊傳入
@@ -70,41 +103,8 @@ def getData(ticker, start_date, end_date, interval) -> jsonify:
         })
 
     except Exception as e:
+        print(e)
         return jsonify({
             "success": False,
             "message": f"getData例外錯誤: {str(e)}"
         })
-
-
-@api.route('/api/gemini/<model>', methods=['POST'])
-def callAPI(model):
-    """
-    setting rate
-    15RPM
-    1500PerDay
-    """
-    data = request.get_json()
-    print
-    if not data or 'input' not in data:
-        print("No input data provided")
-        return jsonify({
-            "success": False,
-            "message": "No input data provided"
-        })
-
-    input_data = data['input']
-    output = None
-    if model == '1':
-        print("call model 1")
-        output = gemini.send_message1(input_data)
-        print(output)
-    elif model == '2':
-        print("call model 2")
-        output = gemini.send_message2(input_data)
-        print(output)
-
-    return jsonify({
-        "success": True,
-        "message": "Success call model {}".format(model),
-        "data": output
-    })

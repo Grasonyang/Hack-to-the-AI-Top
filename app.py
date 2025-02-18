@@ -1,5 +1,5 @@
 from flask import Flask, render_template
-from api import api  # 導入 api Blueprint
+from api import api
 
 app = Flask(__name__)
 app.register_blueprint(api)  # 註冊 api Blueprint

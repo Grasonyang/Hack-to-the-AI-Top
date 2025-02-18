@@ -2,8 +2,12 @@ import os
 import json
 import google.generativeai as genai
 from google.ai.generativelanguage_v1beta.types import content
-os.environ["GEMINI_API_KEY"] = "AIzaSyAdwVSlYhhrmFWyrRd12ApwQF5_wCeBdOY"
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+
+
+def configure_genai_api_key(api_key):
+    os.environ["GEMINI_API_KEY"] = api_key
+    genai.configure(api_key=api_key)
+
 
 # create the model 1
 """
@@ -252,8 +256,9 @@ history2 = []
 chat_session2 = model2.start_chat(history=history2)
 
 
-def send_message1(input):
+def send_message1(input, token):
     global chat_session1, history1
+    configure_genai_api_key(token)
     output = chat_session1.send_message(input)
     output = output.text
     if len(history1) > 12:
@@ -271,8 +276,9 @@ def send_message1(input):
     return output
 
 
-def send_message2(input):
+def send_message2(input, token):
     global chat_session2, history2
+    configure_genai_api_key(token)
     output = chat_session2.send_message(input)
     output = output.text
     if len(history2) > 12:
