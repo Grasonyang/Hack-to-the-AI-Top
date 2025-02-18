@@ -257,7 +257,9 @@ def send_message1(input):
     output = chat_session1.send_message(input)
     output = output.text
     if len(history1) > 12:
-        history1.pop(0, 1)
+        history1.pop(0)
+        history1.pop(0)
+
     history1.append({
         "role": "user",
         "parts": [input]
@@ -274,7 +276,8 @@ def send_message2(input):
     output = chat_session2.send_message(input)
     output = output.text
     if len(history2) > 12:
-        history2.pop(0, 1)
+        history1.pop(0)
+        history1.pop(0)
     history2.append({
         "role": "user",
         "parts": [input]

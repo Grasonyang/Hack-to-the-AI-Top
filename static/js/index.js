@@ -131,15 +131,13 @@ function drawData(apiData) {
 }
 
 async function dealData(data) {
-  // data format
-  // 從第31筆開始抓取，設定移動窗口35，每次移動一筆，取得並製作輸入資料
-  // 輸入資料input1、input2
-  input_data = {
-    input1: [],
-    input2: [],
-    input_raw: [],
-  };
   data_window = 35;
+  // output1_count只有module1預測
+  output1_count_no_model2 = {
+    buy_signal_false: 0,
+    buy_signal_true: 0,
+    first_return_output: [],
+  };
   for (let i = 27; i < data.length - data_window; i++) {
     let input1 = [];
     let input2 = [];
@@ -151,43 +149,77 @@ async function dealData(data) {
         input2.push(data[i + j]);
       }
     }
-    input_data.input_raw.push(data[i + data_window]);
-    input_data.input1.push({
+    // 獲取input1、input2 json array
+    // 組合輸入資料
+    input1_prompt = {
       prompt:
         "你是一個專業的股票分析師，根據過去 30 天的股票數據，分析是否出現買入訊號。",
       data: input1,
-    });
-    const jsonData = JSON.stringify({
+    };
+    output1 = await callAPI(input1_prompt, 1);
+    if (output1.buy_signal) {
+      output1_count_no_model2.buy_signal_true += 1;
+    } else {
+      output1_count_no_model2.buy_signal_false += 1;
+    }
+    draw_no_module2_object = JSON.parse(JSON.stringify(input2[30]));
+    draw_no_module2_object.predict = output1;
+    output1_count_no_model2.first_return_output.push(draw_no_module2_object);
+
+    input2_prompt = {
       prompt:
-        "你是一個專業的股票分析師，根據過去 30 天的股票數據，分析是否出現買入訊號。",
-      data: input1,
-    });
-    await callAPI(input1, 1);
+        "你是一個專業的股票交易評估師，你的任務是根據 **額外 5 天的數據**，驗證 **過去 30 天的分析結果是否準確**。",
+      data: input2,
+      previous_prediction: output1,
+    };
+    output2 = await callAPI(input2_prompt, 2);
+    // output2檢視預測結果
+    // while (1) {
+    //   input2_prompt = {
+    //     prompt:
+    //       "你是一個專業的股票交易評估師，你的任務是根據 **額外 5 天的數據**，驗證 **過去 30 天的分析結果是否準確**。",
+    //     data: input2,
+    //     previous_prediction: output1,
+    //   };
+    //   output2 = await callAPI(input2_prompt, 2);
+    //   if (output2.pass) {
+    //     break;
+    //   } else {
+    //     input1_prompt = {
+    //       prompt: "這",
+    //       data: input1,
+    //     };
+    //     output1 = await callAPI(input1_prompt, 1);
+    //   }
+    //   // 應該要output.pass為true才能跳出迴圈
+    // }
     break;
     input_data.input2.push({
       prompt: "",
       data: input2,
-      last_prompt_ouput: {},
+      last_prompt_ouput: output1,
     });
   }
-  console.log(input_data);
 }
 
 async function callAPI(data, model) {
   let apiUrl = `/api/gemini/${model}`;
-  $.ajax({
-    url: apiUrl,
-    method: "POST",
-    contentType: "application/json",
-    data: JSON.stringify({
-      input: JSON.stringify(data),
-    }),
-    success: function (apiData) {
-      console.log(apiData);
-    },
-    error: function (error) {
-      console.error("Error:", error);
-    },
+  return new Promise((resolve, reject) => {
+    $.ajax({
+      url: apiUrl,
+      method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({
+        input: JSON.stringify(data),
+      }),
+      success: function (e) {
+        resolve(e.data);
+      },
+      error: function (error) {
+        console.error("Error:", error);
+        reject(error);
+      },
+    });
   });
 }
 
