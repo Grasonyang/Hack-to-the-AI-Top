@@ -131,17 +131,24 @@ function drawData(apiData) {
 }
 
 async function dealData(data) {
-  data_window = 35;
-  // output1_count只有module1預測
-  output1_count_no_model2 = {
-    buy_signal_false: 0,
-    buy_signal_true: 0,
-    first_return_output: [],
+  const dataWindow = 35;
+  // output1_count 只有 module1 預測
+  const output1CountNoModel2 = {
+    buySignalFalse: 0,
+    buySignalTrue: 0,
+    firstReturnOutput: [],
   };
-  for (let i = 27; i < data.length - data_window; i++) {
+  const output1CountHasModel2 = {
+    buySignalFalse: 0,
+    buySignalTrue: 0,
+    returnOutput: [],
+  };
+
+  for (let i = 27; i < data.length - dataWindow; i++) {
     let input1 = [];
     let input2 = [];
-    for (let j = 0; j < data_window; j++) {
+
+    for (let j = 0; j < dataWindow; j++) {
       if (j < 30) {
         input1.push(data[i + j]);
         input2.push(data[i + j]);
@@ -149,56 +156,57 @@ async function dealData(data) {
         input2.push(data[i + j]);
       }
     }
-    // 獲取input1、input2 json array
+
+    // 獲取 input1、input2 json array
     // 組合輸入資料
-    input1_prompt = {
+    const input1Prompt = {
       prompt:
         "你是一個專業的股票分析師，根據過去 30 天的股票數據，分析是否出現買入訊號。",
       data: input1,
     };
-    output1 = await callAPI(input1_prompt, 1);
-    if (output1.buy_signal) {
-      output1_count_no_model2.buy_signal_true += 1;
-    } else {
-      output1_count_no_model2.buy_signal_false += 1;
-    }
-    draw_no_module2_object = JSON.parse(JSON.stringify(input2[30]));
-    draw_no_module2_object.predict = output1;
-    output1_count_no_model2.first_return_output.push(draw_no_module2_object);
+    console.log(input1PromptS);
+    let output1 = await callAPI(input1Prompt, 1);
 
-    input2_prompt = {
-      prompt:
-        "你是一個專業的股票交易評估師，你的任務是根據 **額外 5 天的數據**，驗證 **過去 30 天的分析結果是否準確**。",
-      data: input2,
-      previous_prediction: output1,
-    };
-    output2 = await callAPI(input2_prompt, 2);
-    // output2檢視預測結果
-    // while (1) {
-    //   input2_prompt = {
-    //     prompt:
-    //       "你是一個專業的股票交易評估師，你的任務是根據 **額外 5 天的數據**，驗證 **過去 30 天的分析結果是否準確**。",
-    //     data: input2,
-    //     previous_prediction: output1,
-    //   };
-    //   output2 = await callAPI(input2_prompt, 2);
-    //   if (output2.pass) {
-    //     break;
-    //   } else {
-    //     input1_prompt = {
-    //       prompt: "這",
-    //       data: input1,
-    //     };
-    //     output1 = await callAPI(input1_prompt, 1);
-    //   }
-    //   // 應該要output.pass為true才能跳出迴圈
-    // }
-    break;
-    input_data.input2.push({
-      prompt: "",
-      data: input2,
-      last_prompt_ouput: output1,
-    });
+    if (output1.buy_signal) {
+      output1CountNoModel2.buySignalTrue += 1;
+    } else {
+      output1CountNoModel2.buySignalFalse += 1;
+    }
+
+    const drawNoModule2Object = JSON.parse(JSON.stringify(input2[30]));
+    drawNoModule2Object.predict = output1;
+    output1CountNoModel2.firstReturnOutput.push(drawNoModule2Object);
+
+    // output2 檢視預測結果
+    while (true) {
+      const input2Prompt = {
+        prompt:
+          "你是一個專業的股票交易評估師，你的任務是根據 **額外 5 天的數據**，驗證 **過去 30 天的分析結果是否準確**。",
+        data: input2,
+        previous_prediction: output1,
+      };
+
+      const output2 = await callAPI(input2Prompt, 2);
+
+      if (output2.pass) {
+        if (output1.buy_signal) {
+          output1CountHasModel2.buySignalTrue += 1;
+        } else {
+          output1CountHasModel2.buySignalFalse += 1;
+        }
+
+        const drawHasModule2Object = JSON.parse(JSON.stringify(input2[30]));
+        drawHasModule2Object.predict = output1;
+        output1CountHasModel2.returnOutput.push(drawHasModule2Object);
+        break;
+      } else {
+        const retryInput1Prompt = {
+          prompt: `你預測的不正確 ${output2.validation_reason}，請重新預測。`,
+          data: input1,
+        };
+        output1 = await callAPI(retryInput1Prompt, 1);
+      }
+    }
   }
 }
 

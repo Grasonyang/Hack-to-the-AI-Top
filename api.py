@@ -1,12 +1,21 @@
 from flask import Blueprint, request, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import yfinance as yf
 import pandas as pd
 import functions.indicator as indicators
 import functions.gemini as gemini
 api = Blueprint('api', __name__)
+limiter = Limiter(
+    get_remote_address,
+    app=api,
+    default_limits=["1500 per day", "15 per minute"]
+)
+tokens = ["AIzaSyBodMeeVZxh_J6gtkGtXID5Rg_e1MnbJ6Q", "token2", "token3"]
 
 
 @api.route('/api/yfinance/<ticker>/<start_date>/<end_date>/<interval>', methods=['GET'])
+@limiter.limit("15 per minute;1500 per day")
 def getData(ticker, start_date, end_date, interval) -> jsonify:
     """
     1. 股票資訊傳入
@@ -69,6 +78,11 @@ def getData(ticker, start_date, end_date, interval) -> jsonify:
 
 @api.route('/api/gemini/<model>', methods=['POST'])
 def callAPI(model):
+    """
+    setting rate
+    15RPM
+    1500PerDay
+    """
     data = request.get_json()
     print
     if not data or 'input' not in data:
