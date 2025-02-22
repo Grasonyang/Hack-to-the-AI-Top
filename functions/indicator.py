@@ -41,3 +41,12 @@ def getRSI(df, period=14):
     RSI = 100.0 - (100.0 / (1.0 + RS))
     df['RSI'] = RSI
     return df
+
+
+def getMovingAverages(df, short_window=5, long_window=20):
+    """
+    計算 MA5 和 MA20 指標。
+    """
+    df['MA5'] = df['Close'].rolling(window=short_window).mean()
+    df['MA20'] = df['Close'].rolling(window=long_window).mean()
+    return df

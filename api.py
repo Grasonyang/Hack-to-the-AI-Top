@@ -1,73 +1,40 @@
 from flask import Blueprint, request, jsonify
 import yfinance as yf
 import pandas as pd
-import random
-import time
+import json
 import functions.indicator as indicators
 import functions.gemini as gemini
-import json
 
 api = Blueprint('api', __name__)
 
-tokens = [""]
-token = {
-    "token_index": 0,
-    "text": tokens[0],
-    "times": 0,
-}
-
 
 @api.route('/api/gemini/<model>', methods=['POST'])
-def callAPI(model):
-    """
-    setting rate
-    15RPM
-    1500PerDay
-    """
-    global token
-    data = request.get_json()
-    if not data or 'input' not in data:
-        print("No input data provided")
+def callGemini(model):
+    """"""
+    try:
+        input_json = request.form.get('input')
+        input = json.loads(input_json)
+        print(input)
+        return jsonify({
+            "success": True,
+            "message": "callGemini成功"
+        })
+    except Exception as e:
+        print(e)
         return jsonify({
             "success": False,
-            "message": "No input data provided"
+            "message": f"callGemini例外錯誤: {str(e)}"
         })
-
-    input_data = data['input']
-    input_data_json = json.loads(input_data)
-    print(input_data_json["prompt"])
-    output = None
-    if model == '1':
-        print("call model 1")
-        output = gemini.send_message1(input_data, token["text"])
-        print(str(output))
-    elif model == '2':
-        print("call model 2")
-        output = gemini.send_message2(input_data, token["text"])
-        print(str(output))
-    if "429" in str(output):
-        token["token_index"] = (token["token_index"] + 1) % len(tokens)
-        token["text"] = tokens[token["token_index"]]
-        print("Token switched to:", token["text"])
-
-    time.sleep(random.randint(5, 10))
-    return jsonify({
-        "success": True,
-        "message": "Success call model {}".format(model),
-        "data": output
-    })
+    pass
 
 
 @api.route('/api/yfinance/<ticker>/<start_date>/<end_date>/<interval>', methods=['GET'])
-def getData(ticker, start_date, end_date, interval) -> jsonify:
+def callYfinance(ticker, start_date, end_date, interval) -> jsonify:
     """
     1. 股票資訊傳入
     2. 取得股票資料
-    3. 計算技術指標
-    4. 儲存資料到資料庫
+    3. 計算技術指標, 參見 functions/indicator.py
     """
-
-    # get stock data
     try:
         stock_data = yf.download(
             ticker, start=start_date, end=end_date, interval=interval)
@@ -77,17 +44,11 @@ def getData(ticker, start_date, end_date, interval) -> jsonify:
                 "message": "資料為空"
             })
         # set indicators
-        stock_data = indicators.getMACD(stock_data)
-        stock_data = indicators.getKDJ(stock_data)
-        # print("finish get indicators")
-        # set nan to 0
+        stock_data = indicators.getMovingAverages(stock_data)
+        # finish set indicators, start to convert df to json object
         stock_data = stock_data.fillna(0)
-        # print(stock_data)
-        # save stock data to csv
-        # stock_data.to_csv(f'{ticker}_{start_date}_{end_date}.csv')
-        # reset index to ensure keys are serializable
         stock_data_df_to_json = []
-        i = 0
+        i = 0  # id
         for index, row in stock_data.iterrows():
             stock_data_df_to_json.append({
                 "id": i,
@@ -97,16 +58,10 @@ def getData(ticker, start_date, end_date, interval) -> jsonify:
                 "high": row['High'].item(),
                 "low": row['Low'].item(),
                 "volume": row['Volume'].item(),
-                "macd": row['MACD'].item(),
-                "macd_signal": row['MACD_Signal'].item(),
-                "macd_hist": row['MACD_Hist'].item(),
-                "k": row['K'].item(),
-                "d": row['D'].item(),
-                "j": row['J'].item(),
+                "ma5": row['MA5'].item(),
+                "ma20": row['MA20'].item()
             })
             i += 1
-        # print("finish df to json object")
-        # print(stock_data_df_to_json)
         return jsonify({
             "success": True,
             "data": stock_data_df_to_json
@@ -116,5 +71,9 @@ def getData(ticker, start_date, end_date, interval) -> jsonify:
         print(e)
         return jsonify({
             "success": False,
-            "message": f"getData例外錯誤: {str(e)}"
+            "message": f"callYfinance例外錯誤: {str(e)}"
         })
+
+
+if __name__ == '__main__':
+    api.run(debug=True)

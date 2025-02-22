@@ -6,48 +6,13 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
-    <style>
-      /* 簡單的 CSS 樣式 */
-      .candle {
-        stroke-width: 1;
-      }
-
-      .up {
-        fill: rgb(117, 255, 117);
-        stroke: green;
-      }
-
-      .down {
-        fill: rgb(255, 134, 134);
-        stroke: red;
-      }
-    </style>
   </head>
 
   <body>
-    <div>
-      <h2>AI LLM Predict Buy Point</h2>
-      Ticker: <input type="text" id="ticker" value="2330.TW" /><br />
-      Start Date: <input type="date" id="start_date" value="2024-01-01" /><br />
-      End Date: <input type="date" id="end_date" value="2024-06-30" /><br />
-      Interval:
-      <select id="interval">
-        <option value="1d">1d</option>
-        <option value="1wk">1wk</option>
-        <option value="1mo">1mo</option></select
-      ><br />
-      <button onclick="getData()">Get Data</button>
-    </div>
-
-    <div
-      style="display: flex; justify-content: space-center; align-items: center"
-    >
-      <button class="movebutton" id="leftButton">&lt;</button>
-      <div id="chart"></div>
-      <button class="movebutton" id="rightButton">&gt;</button>
-    </div>
+    Hello
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
   </body>
+  <script></script>
 </html>
