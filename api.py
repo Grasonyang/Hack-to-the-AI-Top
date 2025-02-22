@@ -1,16 +1,17 @@
 from flask import Blueprint, request, jsonify
 import yfinance as yf
 import pandas as pd
+import random
+import time
 import functions.indicator as indicators
 import functions.gemini as gemini
+import json
 
 api = Blueprint('api', __name__)
 
-tokens = ["AIzaSyAU4jJ5szZ_XrY5xRYhMAD7SCe1quEuh0s",
-          "AIzaSyCgy28m7cUdUjoVDEmO6YHgSzD526Pev_g",
-          "AIzaSyBodMeeVZxh_J6gtkGtXID5Rg_e1MnbJ6Q"]
+tokens = [""]
 token = {
-    "token_index": 1,
+    "token_index": 0,
     "text": tokens[0],
     "times": 0,
 }
@@ -33,16 +34,23 @@ def callAPI(model):
         })
 
     input_data = data['input']
+    input_data_json = json.loads(input_data)
+    print(input_data_json["prompt"])
     output = None
     if model == '1':
         print("call model 1")
         output = gemini.send_message1(input_data, token["text"])
-        print(output)
+        print(str(output))
     elif model == '2':
         print("call model 2")
         output = gemini.send_message2(input_data, token["text"])
-        print(output)
+        print(str(output))
+    if "429" in str(output):
+        token["token_index"] = (token["token_index"] + 1) % len(tokens)
+        token["text"] = tokens[token["token_index"]]
+        print("Token switched to:", token["text"])
 
+    time.sleep(random.randint(5, 10))
     return jsonify({
         "success": True,
         "message": "Success call model {}".format(model),
