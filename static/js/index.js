@@ -38,4 +38,22 @@ class API {
       });
     });
   }
+  async stockcode(number) {
+    let apiUrl = `/api/stock/code/${number}`;
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        url: apiUrl,
+        method: "GET",
+        dataType: "json",
+        success: function (e) {
+          console.log("stockcode:", e);
+          resolve(e);
+        },
+        error: function (error) {
+          console.error("Error:", error);
+          reject(error);
+        },
+      });
+    });
+  }
 }
