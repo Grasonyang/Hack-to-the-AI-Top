@@ -14,10 +14,14 @@ def callGemini(model):
     try:
         input_json = request.form.get('input')
         input = json.loads(input_json)
-        print(input)
+        output = None
+        if model == "predict":
+            output = gemini.predict_model(input)
+        elif model == "search":
+            output = gemini.search_model(input)
         return jsonify({
             "success": True,
-            "message": "callGemini成功"
+            "data": output
         })
     except Exception as e:
         print(e)
