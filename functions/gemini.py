@@ -18,18 +18,14 @@ google_search_tool = Tool(
 
 
 def configure_genai_api_key():
-    tokens = ["AIzaSyAmbyz82j6ORj6eto1lNJg30sNTvLi_Eag",
-              "AIzaSyBWhebIzg0ngek1HFxSFtelDcwulPdnPMs",
-              "AIzaSyDVacoH99_M6IH7jyU4oNOxDNOKFKLL3qQ"]
+    tokens = ["Your token"]
     token = random.choice(tokens)
     client = genai.Client(api_key=token)
     return client
 
 
 def configure_gemini_api_key():
-    tokens = ["AIzaSyAmbyz82j6ORj6eto1lNJg30sNTvLi_Eag",
-              "AIzaSyBWhebIzg0ngek1HFxSFtelDcwulPdnPMs",
-              "AIzaSyDVacoH99_M6IH7jyU4oNOxDNOKFKLL3qQ"]
+    tokens = ["Your token"]
     token = random.choice(tokens)
     gemini.configure(api_key=token)
 
